@@ -1,10 +1,19 @@
+from typing import List
+
 from litestar import Router, get, post, put, Response
 from litestar.params import JSONBody
 from litestar.status_codes import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
+from sqlmodel import select
 
 from guards import autenticado
 from models import Produto
 from sessao import Sessao
+
+
+@get('/all')
+async def get_produto_all(sessao: Sessao) -> List[Produto]:
+    rows = sessao.db.exec(select(Produto)).all()
+    return rows
 
 
 @get('/{id_produto:int}')
@@ -36,6 +45,7 @@ async def upd_produto(id_produto: int, data: JSONBody[Produto], sessao: Sessao) 
 rota_cad_produto = Router(
     path='/cad/produto',
     route_handlers=[
+        get_produto_all,
         get_produto,
         ins_produto
     ],
