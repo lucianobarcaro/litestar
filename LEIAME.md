@@ -34,7 +34,18 @@ uvicorn init:app --reload
 
 3. Testando a API
 
-Abra o navegador na página:
+Para consultar os endpoints definidos:
 http://localhost:8000/schema/elements
 ou
 http://localhost:8000/schema/swagger
+
+Para autenticar, use o payload:
+```json
+{
+  "username": "teste",
+  "password": "123123"
+}
+```
+
+Endpoints protegidos (que necessitam de autenticação prévia) são acessados passando-se
+o header `X-Usuario` com o vlaor retornado na autenticação (/auth/login)

@@ -8,7 +8,7 @@ import asyncio
 from adm.auth import rota_auth
 from cad.produto import rota_cad_produto
 from litestar.di import Provide
-import sessao
+from sessao import Sessao, cache, pega_sessao
 from cad.usuario import rota_cad_usuario
 from db import get_db_session
 
@@ -29,17 +29,17 @@ class SessionMiddleware(ASGIMiddleware):
 
     async def handle(self, scope: Scope, receive: Receive, send: Send, next_app: ASGIApp) -> None:
         req_headers = {k.decode("latin1").lower(): v.decode("latin1") for k, v in scope.get("headers", [])}
-        sess = sessao.Sessao(
+        sess = Sessao(
             db=get_db_session(),
             usuario_id=int(req_headers.get("x-usuario", '0')),
         )
-        sess_token = sessao.cache.set(sess)
+        sess_token = cache.set(sess)
         await next_app(scope, receive, send)
-        sessao.cache.reset(sess_token)
+        cache.reset(sess_token)
 
 
 @get('/info')
-async def sess_info(sessao: sessao.Sessao) -> dict:
+async def sess_info(sessao: Sessao) -> dict:
     return {
         'db': id(sessao.db),
         'usuario_id': sessao.usuario_id,
@@ -58,7 +58,7 @@ app = Litestar(
         TimeoutMiddleware(),
     ],
     cors_config=cors_config,
-    dependencies={'sessao': Provide(sessao.pega_sessao)},
+    dependencies={'sessao': Provide(pega_sessao)},
     debug=True
 )
 
