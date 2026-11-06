@@ -7,10 +7,10 @@ import asyncio
 
 from adm.auth import rota_auth
 from cad.produto import rota_cad_produto
-from litestar.di import Provide
+from litestar.di import Provide, NamedDependency
 from sessao import Sessao, cache, pega_sessao
 from cad.usuario import rota_cad_usuario
-from db import get_db_session
+from db import get_db_session, dispose_engine
 
 cors_config = CORSConfig(allow_origins=["*"])
 
@@ -34,12 +34,15 @@ class SessionMiddleware(ASGIMiddleware):
             usuario_id=int(req_headers.get("x-usuario", '0')),
         )
         sess_token = cache.set(sess)
-        await next_app(scope, receive, send)
-        cache.reset(sess_token)
+        try:
+            await next_app(scope, receive, send)
+        finally:
+            cache.reset(sess_token)
+            sess.db.close()
 
 
 @get('/info')
-async def sess_info(sessao: Sessao) -> dict:
+async def sess_info(sessao: NamedDependency[Sessao]) -> dict:
     return {
         'db': id(sessao.db),
         'usuario_id': sessao.usuario_id,
@@ -59,6 +62,7 @@ app = Litestar(
     ],
     cors_config=cors_config,
     dependencies={'sessao': Provide(pega_sessao)},
+    on_shutdown=[dispose_engine],
     debug=True
 )
 

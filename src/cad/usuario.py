@@ -1,7 +1,8 @@
 from typing import List
 
 from litestar import Router, get, post, put, Response
-from litestar.params import JSONBody
+from litestar.di import NamedDependency
+from litestar.params import JSONBody, FromPath
 from litestar.status_codes import HTTP_204_NO_CONTENT, HTTP_202_ACCEPTED
 from sqlmodel import select
 
@@ -11,13 +12,13 @@ from sessao import Sessao
 
 
 @get('/all')
-async def get_usuario_all(sessao: Sessao) -> List[Usuario]:
+async def get_usuario_all(sessao: NamedDependency[Sessao]) -> List[Usuario]:
     rows = sessao.db.exec(select(Usuario)).all()
     return rows
 
 
 @get('/{id_usuario:int}')
-async def get_usuario(id_usuario: int, sessao: Sessao) -> Usuario | Response:
+async def get_usuario(id_usuario: FromPath[int], sessao: NamedDependency[Sessao]) -> Usuario | Response:
     qr = sessao.db.exec(
         select(Usuario)
         .where(Usuario.id == id_usuario)
@@ -27,14 +28,14 @@ async def get_usuario(id_usuario: int, sessao: Sessao) -> Usuario | Response:
 
 
 @post('/')
-async def ins_usuario(data: JSONBody[Usuario], sessao: Sessao) -> dict:
+async def ins_usuario(data: JSONBody[Usuario], sessao: NamedDependency[Sessao]) -> dict:
     sessao.db.add(data)
     sessao.db.commit()
     return {'id': data.id}
 
 
 @put('/{id_usuario:int}', status_code=HTTP_202_ACCEPTED)
-async def upd_usuario(id_usuario: int, data: JSONBody[Usuario], sessao: Sessao) -> bool | Response:
+async def upd_usuario(id_usuario: FromPath[int], data: JSONBody[Usuario], sessao: NamedDependency[Sessao]) -> bool | Response:
     r = sessao.db.get(Usuario, id_usuario)
     if not r:
         return Response('', status_code=HTTP_204_NO_CONTENT)

@@ -1,5 +1,8 @@
 from litestar import Router, get, post, put, delete, Response
 from dataclasses import dataclass
+
+from litestar.di import NamedDependency
+from litestar.params import JSONBody
 from litestar.status_codes import HTTP_401_UNAUTHORIZED, HTTP_200_OK
 
 from models import Usuario
@@ -14,7 +17,7 @@ class LoginInfoModel:
 
 
 @post('/login', status_code=HTTP_200_OK)
-async def auth_login(data: LoginInfoModel, sessao: Sessao) -> Usuario|Response:
+async def auth_login(data: JSONBody[LoginInfoModel], sessao: NamedDependency[Sessao]) -> Usuario|Response:
     qr = sessao.db.exec(
         select(Usuario)
         .where(Usuario.usuario == data.username,

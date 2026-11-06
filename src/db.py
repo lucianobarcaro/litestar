@@ -7,26 +7,50 @@ import pickle
 import uuid
 from sqlalchemy import JSON, Engine
 from sqlalchemy import UUID, String, Integer, TIMESTAMP
-# from sqlalchemy.dialects.mysql import INTEGER, TIMESTAMP
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.orm import declared_attr
 from sqlalchemy.sql import func
 from sqlalchemy.types import UserDefinedType
 from sqlmodel import Field
+import os
 
 db_parameters = {
     'driver': 'sqlite',
     'dbname': './database.db'
 }
 
+# Usa outro banco se for testes e sempre o recria do zero.
+if os.getenv('PYTEST_VERSION'):
+    db_parameters['dbname'] = '../database_test.db'
+    if os.path.isfile(db_parameters['dbname']):
+        os.unlink(db_parameters['dbname'])
+
 
 def get_engine(**kwargs) -> Engine:
     return create_engine('{driver}:///{dbname}'.format(**db_parameters), **kwargs)
 
 
+# Engine único da aplicação (o pool de conexões fica nele). Criado sob demanda.
+_engine: Engine | None = None
+
+
+def get_shared_engine() -> Engine:
+    global _engine
+    if _engine is None:
+        _engine = get_engine()
+    return _engine
+
+
+def dispose_engine() -> None:
+    """Fecha todas as conexões do pool. Chamar no shutdown da aplicação."""
+    global _engine
+    if _engine is not None:
+        _engine.dispose()
+        _engine = None
+
+
 def get_db_session() -> Session:
-    engine = get_engine()
-    session = Session(bind=engine, expire_on_commit=False)
+    session = Session(bind=get_shared_engine(), expire_on_commit=False)
 
     # Criação de atalhos úteis
     session.cursor = lambda *args, **kwargs: session.connection().connection.cursor(*args, **kwargs)  # noqa
@@ -90,6 +114,7 @@ class PickleField(UserDefinedType):
         return processa
 
 
+# Atalhos úteis - definição especial de campos --------------------------------
 # noinspection PyPep8Naming
 def FIntPK(**kwargs):
     # noinspection PyTypeChecker
@@ -120,7 +145,6 @@ def FKUuid4(**kwargs):
         **kwargs
     )
 
-# Definição especial de campos --------------------------------
 # noinspection PyPep8Naming
 def FPKUuid7(**kwargs):
     # noinspection PyTypeChecker
