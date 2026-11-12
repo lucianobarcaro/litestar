@@ -30,4 +30,3 @@ if not os.path.isfile(db_parameters['dbname']):
             Produto(descricao='Produto \N{GREEK SMALL LETTER PI}', preco=3.14),
         ])
         session.commit()
-

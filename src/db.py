@@ -1,12 +1,10 @@
 """
 Tudo relacionado ao banco
 """
-
 from sqlmodel import SQLModel, create_engine, Session
 import pickle
 import uuid
-from sqlalchemy import JSON, Engine
-from sqlalchemy import UUID, String, Integer, TIMESTAMP
+from sqlalchemy import JSON, Engine, UUID, String, Integer, TIMESTAMP
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.orm import declared_attr
 from sqlalchemy.sql import func
@@ -14,12 +12,13 @@ from sqlalchemy.types import UserDefinedType
 from sqlmodel import Field
 import os
 
+
 db_parameters = {
     'driver': 'sqlite',
     'dbname': './database.db'
 }
 
-# Usa outro banco se for testes e sempre o recria do zero.
+# Usa outro banco se for teste e sempre o recria do zero.
 if os.getenv('PYTEST_VERSION'):
     db_parameters['dbname'] = '../database_test.db'
     if os.path.isfile(db_parameters['dbname']):
@@ -59,6 +58,8 @@ def get_db_session() -> Session:
     return session
 
 
+# A única função desta classe é definir automaticamente o atributo __tablename__ (nome real da tabela no banco)
+# Definida em snake_case a partir do nome do model (transforma AdmCadUsuario em adm_cad_usuario)
 class DBModel(SQLModel):
     # noinspection PyMethodParameters
     @declared_attr  # type: ignore
@@ -70,6 +71,7 @@ class DBModel(SQLModel):
         )
 
 
+# Permite que se use dicionários como campos (json) e que as alterações sejam rastreáveis
 class MutableDict(Mutable, dict):
     @classmethod
     def coerce(cls, key, value):
@@ -125,6 +127,7 @@ def FIntPK(**kwargs):
         **kwargs
     )
 
+
 # noinspection PyPep8Naming
 def FJson(default_factory=lambda: {}, **kwargs):
     # noinspection PyTypeChecker
@@ -145,6 +148,7 @@ def FKUuid4(**kwargs):
         **kwargs
     )
 
+
 # noinspection PyPep8Naming
 def FPKUuid7(**kwargs):
     # noinspection PyTypeChecker
@@ -155,6 +159,7 @@ def FPKUuid7(**kwargs):
         primary_key=True,
         **kwargs
     )
+
 
 # noinspection PyPep8Naming
 def FKUuid7(**kwargs):
@@ -169,10 +174,12 @@ def FKUuid7(**kwargs):
         **kwargs
     )
 
+
 # noinspection PyPep8Naming
 def FChar(sz:int, **kwargs):
     # noinspection PyTypeChecker
     return Field(sa_type=String(sz), **kwargs)
+
 
 # noinspection PyPep8Naming
 def FTimestampHR(fsp:int=6, **kwargs):

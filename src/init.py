@@ -12,6 +12,7 @@ from sessao import Sessao, cache, pega_sessao
 from cad.usuario import rota_cad_usuario
 from db import get_db_session, dispose_engine
 
+
 cors_config = CORSConfig(allow_origins=["*"])
 
 
@@ -61,13 +62,9 @@ app = Litestar(
         TimeoutMiddleware(),
     ],
     cors_config=cors_config,
-    dependencies={'sessao': Provide(pega_sessao)},
+    dependencies=
+        {'sessao': Provide(pega_sessao)
+    },
     on_shutdown=[dispose_engine],
     debug=True
 )
-
-
-if __name__ == '__main__':
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)

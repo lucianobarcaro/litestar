@@ -9,6 +9,7 @@ class Sessao:
     db: Any
     usuario_id: Optional[int] = None
 
+
 cache = ContextVar('sessao')  # , default=Sessao(db=None, usuario_id=None))
 
 
